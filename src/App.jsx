@@ -1,35 +1,92 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [winCounter, setWinCounter] = useState(0);
+  const [cards, setCards] = useState();
+  const [keys, setKeys] = useState([]);
+  const [cardImg, setCardImg] = useState();
+  const [isLost, setIsLost] = useState(false);
+  const [highScore, setHighScore] = useState(0);
+
+  // api call with useEffect & axios
+  useEffect(() => {
+    const getCards = async () => {
+      try {
+        const response = await axios.get(
+          "https://www.deckofcardsapi.com/api/deck/new/draw/?count=5"
+        );
+        setCards(response.data.cards);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getCards();
+  }, [winCounter]);
+
+  // win counter
+  function clickCounter() {
+    setWinCounter((prev) => prev + 1);
+  }
+  // set keys in an array to see if a number was clicked before or not
+  function keySetter(key) {
+    setKeys((prev) => [...prev, key]);
+  }
+
+  // check if player won
+  function checkWin(key) {
+    if (keys.includes(key)) {
+      setIsLost(true);
+    }
+  }
+  // keep track of high score
+  function ScordRecord(score, Hscore) {
+    if (score > Hscore) {
+      setHighScore(score);
+    } else {
+      setHighScore(Hscore);
+    }
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="game-container">
+      {isLost ? (
+        <>
+          <button
+            className="retry-btn"
+            onClick={() => {
+              setIsLost(false);
+              setWinCounter(0);
+              ScordRecord(winCounter, highScore);
+            }}
+          >
+            Retry
+          </button>
+          <div className="lost">You lost the game</div>
+        </>
+      ) : (
+        <>
+          <div className="win-counter">Highest Score : {highScore} </div>
+          <div className="win-counter">current wins :{winCounter}</div>
+          <div className="deck">
+            {cards &&
+              cards.map((card) => (
+                <img
+                  key={card.code}
+                  src={card.image}
+                  alt="no img"
+                  onClick={() => {
+                    keySetter(card.code);
+                    clickCounter();
+                    checkWin(card.code);
+                  }}
+                />
+              ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
